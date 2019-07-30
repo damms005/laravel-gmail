@@ -1,7 +1,5 @@
-<?php
-​
-namespace Amchara\LaravelGmail\Services;
-​
+<?php namespace Amchara\LaravelGmail\Services;
+
 use Amchara\LaravelGmail\LaravelGmailClass;
 use Amchara\LaravelGmail\Services\Message\Mail;
 use Amchara\LaravelGmail\Traits\Filterable;
