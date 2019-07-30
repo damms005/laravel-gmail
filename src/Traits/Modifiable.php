@@ -1,8 +1,8 @@
 <?php
 
-namespace Dacastro4\LaravelGmail\Traits;
+namespace Amchara\LaravelGmail\Traits;
 
-use Dacastro4\LaravelGmail\Services\Message\Mail;
+use Amchara\LaravelGmail\Services\Message\Mail;
 use Google_Service_Gmail;
 
 /**
@@ -105,7 +105,7 @@ trait Modifiable
 	/**
 	 * Send the email to the trash
 	 *
-	 * @return \Dacastro4\LaravelGmail\Services\Message\Mail|\Exception
+	 * @return \Amchara\LaravelGmail\Services\Message\Mail|\Exception
 	 */
 	public function sendToTrash()
 	{

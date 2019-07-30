@@ -1,19 +1,17 @@
 {
-  "name": "dacastro4/laravel-gmail",
-  "description": "Gmail API package for Laravel",
+  "name": "amchara/laravel-gmail",
+  "description": "Gmail API package for Laravel based on dacastro4/laravel-gmail",
   "keywords": [
     "api",
     "laravel",
     "Gmail"
   ],
   "license": "MIT",
-  "authors": [
-    {
-      "name": "Daniel Castro",
-      "email": "danielcastro04@gmail.com",
-      "homepage": "https://danielcastro.me"
-    }
-  ],
+  "authors": [{
+    "name": "Alex & Georgi",
+    "email": "tech@amchara.com",
+    "homepage": "https://amchara.com"
+  }],
   "require": {
     "php": ">=5.6",
     "google/apiclient": "^2.0",
@@ -33,7 +31,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Dacastro4\\LaravelGmail\\": "src/"
+      "Amchara\\LaravelGmail\\": "src/"
     }
   },
   "autoload-dev": {
@@ -44,10 +42,10 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Dacastro4\\LaravelGmail\\LaravelGmailServiceProvider"
+        "Amchara\\LaravelGmail\\LaravelGmailServiceProvider"
       ],
       "aliases": {
-        "LaravelGmail": "Dacastro4\\LaravelGmail\\Facade\\LaravelGmail"
+        "LaravelGmail": "Amchara\\LaravelGmail\\Facade\\LaravelGmail"
       }
     }
   },

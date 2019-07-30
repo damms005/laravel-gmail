@@ -1,8 +1,8 @@
 <?php
 
-namespace Dacastro4\LaravelGmail\Traits;
+namespace Amchara\LaravelGmail\Traits;
 
-use Dacastro4\LaravelGmail\Services\Message\Mail;
+use Amchara\LaravelGmail\Services\Message\Mail;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Message;
 use Swift_Attachment;

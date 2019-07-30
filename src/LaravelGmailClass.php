@@ -1,65 +1,65 @@
 <?php
 
-namespace Dacastro4\LaravelGmail;
+namespace Amchara\LaravelGmail;
 
-use Dacastro4\LaravelGmail\Exceptions\AuthException;
-use Dacastro4\LaravelGmail\Services\Message;
+use Amchara\LaravelGmail\Exceptions\AuthException;
+use Amchara\LaravelGmail\Services\Message;
 use Illuminate\Support\Facades\Redirect;
 
 class LaravelGmailClass extends GmailConnection
 {
 
-	public function __construct($config)
-	{
-		if (class_basename($config) === 'Application') {
-			$config = $config['config'];
-		}
+    public function __construct($config)
+    {
+        if (class_basename($config) === 'Application') {
+            $config = $config['config'];
+        }
 
-		parent::__construct($config);
-	}
+        parent::__construct($config);
+    }
 
-	/**
-	 * @return Message
-	 * @throws AuthException
-	 */
-	public function message()
-	{
-		if (!$this->getToken()) {
-			throw new AuthException('No credentials found.');
-		}
+    /**
+     * @return Message
+     * @throws AuthException
+     */
+    public function message()
+    {
+        if (!$this->getToken()) {
+            throw new AuthException('No credentials found.');
+        }
 
-		return new Message($this);
-	}
+        return new Message($this);
+    }
 
-	/**
-	 * Returns the Gmail user email
-	 *
-	 * @return \Google_Service_Gmail_Profile
-	 */
-	public function user()
-	{
-		return $this->config('email');
-	}
+    /**
+     * Returns the Gmail user email
+     *
+     * @return \Google_Service_Gmail_Profile
+     */
+    public function user()
+    {
+        return $this->config('email');
+    }
 
-	public function redirect()
-	{
-		return Redirect::to($this->getAuthUrl());
-	}
+    public function redirect()
+    {
+        return Redirect::to($this->getAuthUrl());
+    }
 
-	/**
-	 * Gets the URL to authorize the user
-	 *
-	 * @return string
-	 */
-	public function getAuthUrl()
-	{
-		return $this->createAuthUrl();
-	}
+    /**
+     * Gets the URL to authorize the user
+     *
+     * @return string
+     */
+    public function getAuthUrl()
+    {
+        return $this->createAuthUrl();
+    }
 
-	public function logout()
-	{
-		$this->revokeToken();
-		$this->deleteAccessToken();
-	}
+    public function logout()
+    {
+        $this->revokeToken();
+        $this->deleteAccessToken();
+    }
 
 }

@@ -1,13 +1,13 @@
 <?php
 
-namespace Dacastro4\LaravelGmail\Traits;
+namespace Amchara\LaravelGmail\Traits;
 
 use Google_Service_Gmail;
 use Storage;
 
 /**
  * Trait Configurable
- * @package Dacastro4\LaravelGmail\Traits
+ * @package AmcharaaravelGmail\Traits
  */
 trait Configurable
 {

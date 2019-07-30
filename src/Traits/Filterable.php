@@ -1,8 +1,8 @@
 <?php
 
-namespace Dacastro4\LaravelGmail\Traits;
+namespace Amchara\LaravelGmail\Traits;
 
-use Dacastro4\LaravelGmail\Services\Message;
+use Amchara\LaravelGmail\Services\Message;
 
 trait Filterable
 {

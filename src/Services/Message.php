@@ -1,34 +1,32 @@
 <?php
-
-namespace Dacastro4\LaravelGmail\Services;
-
-use Dacastro4\LaravelGmail\LaravelGmailClass;
-use Dacastro4\LaravelGmail\Services\Message\Mail;
-use Dacastro4\LaravelGmail\Traits\Filterable;
-use Dacastro4\LaravelGmail\Traits\SendsParameters;
+​
+namespace Amchara\LaravelGmail\Services;
+​
+use Amchara\LaravelGmail\LaravelGmailClass;
+use Amchara\LaravelGmail\Services\Message\Mail;
+use Amchara\LaravelGmail\Traits\Filterable;
+use Amchara\LaravelGmail\Traits\SendsParameters;
 use Google_Service_Gmail;
-
+​
 class Message
 {
-
+​
 	use SendsParameters,
 		Filterable;
-
+​
 	public $service;
-
+​
 	public $preload = false;
-
+​
 	public $pageToken;
-
-	public $client;
-
+​
 	/**
 	 * Optional parameter for getting single and multiple emails
 	 *
 	 * @var array
 	 */
 	protected $params = [];
-
+​
 	/**
 	 * Message constructor.
 	 *
@@ -36,10 +34,9 @@ class Message
 	 */
 	public function __construct(LaravelGmailClass $client)
 	{
-		$this->client = $client;
 		$this->service = new Google_Service_Gmail($client);
 	}
-
+​
 	/**
 	 * Returns next page if available of messages or an empty collection
 	 *
@@ -53,7 +50,7 @@ class Message
 			return collect([]);
 		}
 	}
-
+​
 	/**
 	 * Returns a collection of Mail instances
 	 *
@@ -66,24 +63,21 @@ class Message
 		if (!is_null($pageToken)) {
 			$this->add($pageToken, 'pageToken');
 		}
-
+​
 		$messages = [];
 		$response = $this->service->users_messages->listUsersMessages('me', $this->params);
+​
 		$this->pageToken = $response->getNextPageToken();
-
+​
 		$allMessages = $response->getMessages();
-
-		if (!$this->preload) {
-			foreach ($allMessages as $message) {
-				$messages[] = new Mail($message, $this->preload);
-			}
-		} else {
-			$messages = $this->batchRequest($allMessages);
-		}
-
+​
+		foreach ($allMessages as $message) {
+			$messages[] = new Mail($message, $this->preload);
+        }
+​
 		return collect($messages);
 	}
-
+​
 	/**
 	 * Returns boolean if the page token variable is null or not
 	 *
@@ -93,9 +87,9 @@ class Message
 	{
 		return !!$this->pageToken;
 	}
-
+​
 	/**
-	 * Limit the messages coming from the queryxw
+	 * Limit the messages coming from the query
 	 *
 	 * @param  int  $number
 	 *
@@ -104,10 +98,10 @@ class Message
 	public function take($number)
 	{
 		$this->params['maxResults'] = abs((int) $number);
-
+​
 		return $this;
 	}
-
+​
 	/**
 	 * @param $id
 	 *
@@ -115,39 +109,11 @@ class Message
 	 */
 	public function get($id)
 	{
-		$message = $this->getRequest($id);
-
+		$message = $this->service->users_messages->get('me', $id);
+​
 		return new Mail($message);
 	}
-
-	/**
-	 * Creates a batch request to get all emails in a single call
-	 *
-	 * @param $allMessages
-	 *
-	 * @return array|null
-	 */
-	public function batchRequest($allMessages)
-	{
-		$this->client->setUseBatch(true);
-
-		$batch = $this->service->createBatch();
-
-		foreach ($allMessages as $key => $message) {
-			$batch->add($this->getRequest($message->getId()), $key);
-		}
-
-		$messagesBatch = $batch->execute();
-
-		$messages = [];
-
-		foreach ($messagesBatch as $message) {
-			$messages[] = new Mail($message);
-		}
-
-		return $messages;
-	}
-
+​
 	/**
 	 * Preload the information on each Mail objects.
 	 * If is not preload you will have to call the load method from the Mail class
@@ -158,22 +124,7 @@ class Message
 	public function preload()
 	{
 		$this->preload = true;
-
+​
 		return $this;
-	}
-
-	public function getUser()
-	{
-		return $this->client->user();
-	}
-
-	/**
-	 * @param $id
-	 *
-	 * @return \Google_Service_Gmail_Message
-	 */
-	private function getRequest($id)
-	{
-		return $this->service->users_messages->get('me', $id);
 	}
 }
