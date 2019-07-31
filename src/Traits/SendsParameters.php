@@ -14,12 +14,12 @@ trait SendsParameters
 	public function add($query, $column = 'q')
 	{
 		$query = urlencode($query);
-
-		if (isset($this->params[$column])) {
+		$this->params[$column] = $query;
+/*		if (isset($this->params[$column])) {
 			$this->params[$column] = "{$this->params[$column]} $query";
 		} else {
 			$this->params = array_add($this->params, $column, $query);
 		}
-
+*/
 	}
 }
