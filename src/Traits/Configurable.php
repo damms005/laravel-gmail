@@ -50,7 +50,7 @@ trait Configurable
     {
         $userId = auth()->id();
 
-        $mailConfig = MailConfig::where('practitioner_id', $userId)->where('type', 'google')->get()->config;
+        $mailConfig = MailConfig::where('practitioner_id', $userId)->where('type', 'google')->first()->config;
 
         $allowMultipleCredentials = $this->_config['gmail.allow_multiple_credentials'];
 
