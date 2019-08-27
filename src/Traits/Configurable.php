@@ -4,7 +4,6 @@ namespace Amchara\LaravelGmail\Traits;
 
 use App\MailConfig;
 use Google_Service_Gmail;
-use Storage;
 
 /**
  * Trait Configurable
@@ -29,9 +28,9 @@ trait Configurable
 
         if ($credentials) {
             if ($allowJsonEncrypt) {
-                $config = json_decode(decrypt($credentials), true);
+                $config = json_decode(decrypt($credentials->config), true);
             } else {
-                $config = json_decode($credentials, true);
+                $config = json_decode($credentials->config, true);
             }
 
             if ($string) {
@@ -57,7 +56,7 @@ trait Configurable
 
         if ($mailConfig && $allowMultipleCredentials) {
 
-            return $mailConfig->config;
+            return $mailConfig;
         }
         return false;
     }
