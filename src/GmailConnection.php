@@ -16,6 +16,8 @@ class GmailConnection extends Google_Client
         __construct as configConstruct;
     }
 
+    // Moving to Storage in the DB
+
     protected $emailAddress;
     protected $refreshToken;
     protected $app;
