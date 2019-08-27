@@ -50,7 +50,7 @@ class GmailConnection extends Google_Client
      */
     public function checkPreviouslyLoggedIn()
     {
-        $fileName = $this->getFileName();
+        $fileName = $this->getClientGmailCredentials();
         $file = "gmail/tokens/$fileName.json";
         $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
 
@@ -146,7 +146,7 @@ class GmailConnection extends Google_Client
     public function saveAccessToken(array $config)
     {
         $disk = Storage::disk('local');
-        $fileName = $this->getFileName();
+        $fileName = $this->getClientGmailCredentials();
         $file = "gmail/tokens/$fileName.json";
         $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
         $config['email'] = $this->emailAddress;
@@ -240,7 +240,7 @@ class GmailConnection extends Google_Client
     public function deleteAccessToken()
     {
         $disk = Storage::disk('local');
-        $fileName = $this->getFileName();
+        $fileName = $this->getClientGmailCredentials();
         $file = "gmail/tokens/$fileName.json";
 
         $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];

@@ -2,6 +2,7 @@
 
 namespace Amchara\LaravelGmail\Traits;
 
+use App\MailConfig;
 use Google_Service_Gmail;
 use Storage;
 
@@ -12,128 +13,129 @@ use Storage;
 trait Configurable
 {
 
-	protected $additionalScopes = [];
-	private $_config;
+    protected $additionalScopes = [];
+    private $_config;
 
-	public function __construct($config)
-	{
-		$this->_config = $config;
-	}
+    public function __construct($config)
+    {
+        $this->_config = $config;
+    }
 
-	public function config($string = null)
-	{
-		$disk = Storage::disk('local');
-		$fileName = $this->getFileName();
-		$file = "gmail/tokens/$fileName.json";
-		$allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
+    public function config($string = null)
+    {
+        $credentials = $this->getClientGmailCredentials();
 
-		if ($disk->exists($file)) {
-			if ($allowJsonEncrypt) {
-				$config = json_decode(decrypt($disk->get($file)), true);
-			} else {
-				$config = json_decode($disk->get($file), true);
-			}
+        $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
 
-			if ($string) {
-				if (isset($config[$string])) {
-					return $config[$string];
-				}
-			} else {
-				return $config;
-			}
+        if ($credentials) {
+            if ($allowJsonEncrypt) {
+                $config = json_decode(decrypt($credentials), true);
+            } else {
+                $config = json_decode($credentials, true);
+            }
 
-		}
+            if ($string) {
+                if (isset($config[$string])) {
+                    return $config[$string];
+                }
+            } else {
+                return $config;
+            }
 
-		return null;
-	}
+        }
 
-	private function getFileName()
-	{
-		$userId = auth()->id();
-		$credentialFilename = $this->_config['gmail.credentials_file_name'];
-		$allowMultipleCredentials = $this->_config['gmail.allow_multiple_credentials'];
+        return null;
+    }
 
-		if ($userId && $allowMultipleCredentials) {
-			return sprintf('%s-%s', $credentialFilename, $userId);
-		}
+    private function getClientGmailCredentials()
+    {
+        $userId = auth()->id();
 
-		return $credentialFilename;
-	}
+        $mailConfig = MailConfig::where('practitioner_id', $userId)->where('type', 'google')->get()->config;
 
-	/**
-	 * @return array
-	 */
-	public function getConfigs()
-	{
-		return [
-			'client_secret' => $this->_config['gmail.client_secret'],
-			'client_id' => $this->_config['gmail.client_id'],
-			'redirect_uri' => url($this->_config['gmail.redirect_url']),
-			'state' => isset($this->_config['state']) ? $this->_config['state'] : null,
-		];
-	}
+        $allowMultipleCredentials = $this->_config['gmail.allow_multiple_credentials'];
 
-	public function setAdditionalScopes(array $scopes)
-	{
-		$this->additionalScopes = $scopes;
+        if ($mailConfig && $allowMultipleCredentials) {
 
-		return $this;
-	}
+            return $mailConfig->config;
+        }
+        return false;
+    }
 
-	private function configApi()
-	{
-		$type = $this->_config['gmail.access_type'];
-		$approval_prompt = $this->_config['gmail.approval_prompt'];
+    /**
+     * @return array
+     */
+    public function getConfigs()
+    {
+        return [
+            'client_secret' => $this->_config['gmail.client_secret'],
+            'client_id' => $this->_config['gmail.client_id'],
+            'redirect_uri' => url($this->_config['gmail.redirect_url']),
+            'state' => isset($this->_config['state']) ? $this->_config['state'] : null,
+        ];
+    }
 
-		$this->setScopes($this->getUserScopes());
+    public function setAdditionalScopes(array $scopes)
+    {
+        $this->additionalScopes = $scopes;
 
-		$this->setAccessType($type);
+        return $this;
+    }
 
-		$this->setApprovalPrompt($approval_prompt);
-	}
+    private function configApi()
+    {
+        $type = $this->_config['gmail.access_type'];
+        $approval_prompt = $this->_config['gmail.approval_prompt'];
 
-	public abstract function setScopes($scopes);
+        $this->setScopes($this->getUserScopes());
 
-	private function getUserScopes()
-	{
-		return $this->mapScopes();
-	}
+        $this->setAccessType($type);
 
-	private function mapScopes()
-	{
-		$scopes = array_merge($this->_config['gmail.scopes'], $this->additionalScopes);
-		$scopes = array_unique(array_filter($scopes));
-		$mappedScopes = [];
+        $this->setApprovalPrompt($approval_prompt);
+    }
 
-		if (!empty($scopes)) {
-			foreach ($scopes as $scope) {
-				$mappedScopes[] = $this->scopeMap($scope);
-			}
-		}
+    abstract public function setScopes($scopes);
 
-		return array_merge($mappedScopes, $this->_config['gmail.additional_scopes']);
-	}
+    private function getUserScopes()
+    {
+        return $this->mapScopes();
+    }
 
-	private function scopeMap($scope)
-	{
-		$scopes = [
-			'all' => Google_Service_Gmail::MAIL_GOOGLE_COM,
-			'compose' => Google_Service_Gmail::GMAIL_COMPOSE,
-			'insert' => Google_Service_Gmail::GMAIL_INSERT,
-			'labels' => Google_Service_Gmail::GMAIL_LABELS,
-			'metadata' => Google_Service_Gmail::GMAIL_METADATA,
-			'modify' => Google_Service_Gmail::GMAIL_MODIFY,
-			'readonly' => Google_Service_Gmail::GMAIL_READONLY,
-			'send' => Google_Service_Gmail::GMAIL_SEND,
-			'settings_basic' => Google_Service_Gmail::GMAIL_SETTINGS_BASIC,
-			'settings_sharing' => Google_Service_Gmail::GMAIL_SETTINGS_SHARING,
-		];
+    private function mapScopes()
+    {
+        $scopes = array_merge($this->_config['gmail.scopes'], $this->additionalScopes);
+        $scopes = array_unique(array_filter($scopes));
+        $mappedScopes = [];
 
-		return array_get($scopes, $scope);
-	}
+        if (!empty($scopes)) {
+            foreach ($scopes as $scope) {
+                $mappedScopes[] = $this->scopeMap($scope);
+            }
+        }
 
-	public abstract function setAccessType($type);
+        return array_merge($mappedScopes, $this->_config['gmail.additional_scopes']);
+    }
 
-	public abstract function setApprovalPrompt($approval);
+    private function scopeMap($scope)
+    {
+        $scopes = [
+            'all' => Google_Service_Gmail::MAIL_GOOGLE_COM,
+            'compose' => Google_Service_Gmail::GMAIL_COMPOSE,
+            'insert' => Google_Service_Gmail::GMAIL_INSERT,
+            'labels' => Google_Service_Gmail::GMAIL_LABELS,
+            'metadata' => Google_Service_Gmail::GMAIL_METADATA,
+            'modify' => Google_Service_Gmail::GMAIL_MODIFY,
+            'readonly' => Google_Service_Gmail::GMAIL_READONLY,
+            'send' => Google_Service_Gmail::GMAIL_SEND,
+            'settings_basic' => Google_Service_Gmail::GMAIL_SETTINGS_BASIC,
+            'settings_sharing' => Google_Service_Gmail::GMAIL_SETTINGS_SHARING,
+        ];
+
+        return array_get($scopes, $scope);
+    }
+
+    abstract public function setAccessType($type);
+
+    abstract public function setApprovalPrompt($approval);
 
 }
