@@ -54,9 +54,9 @@ class GmailConnection extends Google_Client
 
         if ($credentials) {
             if ($allowJsonEncrypt) {
-                $savedConfigToken = json_decode(decrypt($credentials), true);
+                $savedConfigToken = json_decode(decrypt($credentials->config), true);
             } else {
-                $savedConfigToken = json_decode($credentials, true);
+                $savedConfigToken = json_decode($credentials->config, true);
             }
 
             return !empty($savedConfigToken['access_token']);
