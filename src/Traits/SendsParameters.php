@@ -13,13 +13,10 @@ trait SendsParameters
 	 */
 	public function add($query, $column = 'q')
 	{
-		$query = urlencode($query);
-		$this->params[$column] = $query;
-/*		if (isset($this->params[$column])) {
+		if (isset($this->params[$column]) && $column != 'pageToken') {
 			$this->params[$column] = "{$this->params[$column]} $query";
 		} else {
 			$this->params = array_add($this->params, $column, $query);
 		}
-*/
 	}
 }
