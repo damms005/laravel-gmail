@@ -3,6 +3,7 @@
 namespace Amchara\LaravelGmail;
 
 use Amchara\LaravelGmail\Traits\Configurable;
+use App\MailConfig;
 use Google_Client;
 use Google_Service_Gmail;
 use Illuminate\Container\Container;
@@ -146,6 +147,12 @@ class GmailConnection extends Google_Client
 
         $credentials = $this->getClientGmailCredentials();
 
+        if (!$credentials){
+            $credentials = new MailConfig();
+            $credentials->practitioner_id = auth()->user()->id;
+            $credentials->type = 'google';
+            $credentials->status = 'active';
+        }
         $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
 
         $config['email'] = $this->emailAddress;
