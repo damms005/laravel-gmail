@@ -10,6 +10,7 @@ use Amchara\LaravelGmail\Traits\Modifiable;
 use Amchara\LaravelGmail\Traits\Replyable;
 use Google_Service_Gmail;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Class SingleMessage
@@ -276,7 +277,7 @@ class Mail extends GmailConnection
 
 			$name = preg_replace('/ <(.*)>/', '', $email);
 
-			if (starts_with($name, ' ')) {
+			if (Str::startsWith($name, ' ')) {
 				$name = substr($name, 1);
 			}
 
