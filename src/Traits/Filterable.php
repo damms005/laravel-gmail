@@ -55,15 +55,19 @@ trait Filterable
 	 *
 	 * @return self|Message
 	 */
-	public function fromThese(array $emails)
-	{
-		$emailsCount = count($emails);
-		for ($i = 0; $i < $emailsCount; $i++) {
-			!$i ? $this->add("{from:$emails[$i]") : $i == $emailsCount - 1 ? $this->add("from:$emails[$i]}") : $this->from($emails[$i]);
-		}
+    public function fromThese(array $emails)
+    {
+        $emailsCount = count($emails);
+        for ($i = 0; $i < $emailsCount; $i++) {
+            if (!$i){
+                $this->add("{from:$emails[$i]");
+            } else {
+                $i == $emailsCount - 1 ? $this->add("from:$emails[$i]}") : $this->from($emails[$i]);
+            }
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
 	/**
 	 * Filter to get only emails from a specific email address
