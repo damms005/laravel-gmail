@@ -9,6 +9,7 @@ use Amchara\LaravelGmail\Traits\HasParts;
 use Amchara\LaravelGmail\Traits\Modifiable;
 use Amchara\LaravelGmail\Traits\Replyable;
 use Google_Service_Gmail;
+use Google_Service_Gmail_MessagePart;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -58,7 +59,7 @@ class Mail extends GmailConnection
 	 */
 	public $payload;
 
-	public $collectedPayload;
+	public $parts;
 
 	/**
 	 * @var Google_Service_Gmail
@@ -68,17 +69,17 @@ class Mail extends GmailConnection
 	/**
 	 * SingleMessage constructor.
 	 *
-	 * @param  \Google_Service_Gmail_Message  $message
-	 * @param  bool  $preload
+	 * @param \Google_Service_Gmail_Message $message
+	 * @param bool $preload
+	 * @param  int 	$userId
 	 */
-	public function __construct(\Google_Service_Gmail_Message $message = null, $preload = false)
+	public function __construct(\Google_Service_Gmail_Message $message = null, $preload = false, $userId = null)
 	{
-
 		$this->service = new Google_Service_Gmail($this);
 
 		$this->__rConstruct();
 		$this->__mConstruct();
-		parent::__construct(config());
+		parent::__construct(config(), $userId);
 
 		if (!is_null($message)) {
 			if ($preload) {
@@ -96,7 +97,7 @@ class Mail extends GmailConnection
 	/**
 	 * Sets data from mail
 	 *
-	 * @param  \Google_Service_Gmail_Message  $message
+	 * @param \Google_Service_Gmail_Message $message
 	 */
 	protected function setMessage(\Google_Service_Gmail_Message $message)
 	{
@@ -106,7 +107,9 @@ class Mail extends GmailConnection
 		$this->size = $message->getSizeEstimate();
 		$this->threadId = $message->getThreadId();
 		$this->payload = $message->getPayload();
-		$this->collectedPayload = collect($this->payload);
+		if ($this->payload) {
+			$this->parts = collect($this->payload->getParts());
+		}
 	}
 
 	/**
@@ -198,7 +201,7 @@ class Mail extends GmailConnection
 	/**
 	 * Returns array of name and email of each recipient
 	 *
-	 * @param  string|null  $email
+	 * @param string|null $email
 	 * @return array
 	 */
 	public function getFrom($email = null)
@@ -210,7 +213,7 @@ class Mail extends GmailConnection
 		$name = preg_replace('/ <(.*)>/', '', $from);
 
 		return [
-			'name' => $name,
+			'name'  => $name,
 			'email' => isset($matches[1]) ? $matches[1] : null,
 		];
 	}
@@ -223,6 +226,10 @@ class Mail extends GmailConnection
 	public function getFromEmail()
 	{
 		$from = $this->getHeader('From');
+
+		if (filter_var($from, FILTER_VALIDATE_EMAIL)) {
+			return $from;
+		}
 
 		preg_match('/<(.*)>/', $from, $matches);
 
@@ -256,9 +263,33 @@ class Mail extends GmailConnection
 	}
 
 	/**
+	 * Returns array list of cc recipients
+	 *
+	 * @return array
+	 */
+	public function getCc()
+	{
+		$allCc = $this->getHeader('Cc');
+
+		return $this->formatEmailList($allCc);
+	}
+
+	/**
+	 * Returns array list of bcc recipients
+	 *
+	 * @return array
+	 */
+	public function getBcc()
+	{
+		$allBcc = $this->getHeader('Bcc');
+
+		return $this->formatEmailList($allBcc);
+	}
+
+	/**
 	 * Returns an array of emails from an string in RFC 822 format
 	 *
-	 * @param  string  $emails  email list in RFC 822 format
+	 * @param string $emails email list in RFC 822 format
 	 *
 	 * @return array
 	 */
@@ -321,7 +352,7 @@ class Mail extends GmailConnection
 	}
 
 	/**
-	 * @param  bool  $raw
+	 * @param bool $raw
 	 *
 	 * @return string
 	 */
@@ -335,14 +366,14 @@ class Mail extends GmailConnection
 	/**
 	 * Returns a specific body part from an email
 	 *
-	 * @param  string  $type
+	 * @param string $type
 	 *
 	 * @return null|string
 	 * @throws \Exception
 	 */
 	public function getBody($type = 'text/plain')
 	{
-		$parts = $this->getAllParts($this->collectedPayload);
+		$parts = $this->getAllParts($this->parts);
 
 		try {
 			if (!$parts->isEmpty()) {
@@ -371,11 +402,12 @@ class Mail extends GmailConnection
 	 */
 	public function hasAttachments()
 	{
-		$parts = $this->getAllParts($this->collectedPayload);
+		$parts = $this->getAllParts($this->parts);
 		$has = false;
 
+		/** @var Google_Service_Gmail_MessagePart $part */
 		foreach ($parts as $part) {
-			if (!empty($part->body->attachmentId)) {
+			if (!empty($part->body->attachmentId) && $part->getFilename() != null && strlen($part->getFilename()) > 0) {
 				$has = true;
 				break;
 			}
@@ -392,7 +424,7 @@ class Mail extends GmailConnection
 	public function countAttachments()
 	{
 		$numberOfAttachments = 0;
-		$parts = $this->getAllParts($this->collectedPayload);
+		$parts = $this->getAllParts($this->parts);
 
 		foreach ($parts as $part) {
 			if (!empty($part->body->attachmentId)) {
@@ -427,7 +459,7 @@ class Mail extends GmailConnection
 	/**
 	 * Gets the HTML body
 	 *
-	 * @param  bool  $raw
+	 * @param bool $raw
 	 *
 	 * @return string
 	 */
@@ -452,7 +484,7 @@ class Mail extends GmailConnection
 	/**
 	 * Returns a collection of attachments
 	 *
-	 * @param  bool  $preload  Preload only the attachment's 'data'.
+	 * @param bool $preload Preload only the attachment's 'data'.
 	 * But does not load the other attachment info like filename, mimetype, etc..
 	 *
 	 * @return Collection
@@ -461,7 +493,7 @@ class Mail extends GmailConnection
 	public function getAttachments($preload = false)
 	{
 		$attachments = new Collection();
-		$parts = $this->getAllParts($this->collectedPayload);
+		$parts = $this->getAllParts($this->parts);
 
 		foreach ($parts as $part) {
 			if (!empty($part->body->attachmentId)) {
@@ -513,7 +545,7 @@ class Mail extends GmailConnection
 	/**
 	 * Sets the access token in case we wanna use a different token
 	 *
-	 * @param  string  $token
+	 * @param string $token
 	 *
 	 * @return Mail
 	 */
@@ -531,7 +563,7 @@ class Mail extends GmailConnection
 	 */
 	public function hasParts()
 	{
-		return !!$this->iterateParts($this->collectedPayload, $returnOnFirstFound = true);
+		return !!$this->iterateParts($this->parts, $returnOnFirstFound = true);
 	}
 
 	/**

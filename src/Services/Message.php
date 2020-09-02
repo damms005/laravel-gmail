@@ -52,24 +52,38 @@ class Message
         }
     }
 
-    /**
-     * Returns a collection of Mail instances
-     *
-     * @param  null|string  $pageToken
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function all($pageToken = null)
-    {
-        if (!is_null($pageToken)) {
-            $this->add($pageToken, 'pageToken');
-        }
+	/**
+	 * Returns next page if available of messages or an empty collection
+	 *
+	 * @return \Illuminate\Support\Collection
+	 * @throws \Google_Exception
+	 */
+	public function next()
+	{
+		if ($this->pageToken) {
+			return $this->all($this->pageToken);
+		} else {
+			return new MessageCollection([], $this);
+		}
+	}
 
-        $messages = [];
-        $response = $this->getMessagesResponse();
-        $this->pageToken = method_exists( $response, 'getNextPageToken' ) ? $response->getNextPageToken() : null;
+	/**
+	 * Returns a collection of Mail instances
+	 *
+	 * @param null|string $pageToken
+	 *
+	 * @return \Illuminate\Support\Collection
+	 * @throws \Google_Exception
+	 */
+	public function all($pageToken = null)
+	{
+		if (!is_null($pageToken)) {
+			$this->add($pageToken, 'pageToken');
+		}
 
-        $allMessages = $response->getMessages();
+		$messages = [];
+		$response = $this->getMessagesResponse();
+		$this->pageToken = method_exists( $response, 'getNextPageToken' ) ? $response->getNextPageToken() : null;
 
         foreach ($allMessages as $message) {
             $messages[] = new Mail($message, $this->preload);
@@ -78,10 +92,10 @@ class Message
         return new MessageCollection($messages, $this);
     }
 
-    private function getMessagesResponse()
-    {
-//		dd($this->params);
-        $responseOrRequest = $this->service->users_messages->listUsersMessages( 'me', $this->params );
+		$all = new MessageCollection($messages, $this);
+
+		return $all;
+	}
 
         if ( get_class( $responseOrRequest ) === "GuzzleHttp\Psr7\Request" ) {
             $response = $this->service->getClient()->execute( $responseOrRequest, 'Google_Service_Gmail_ListMessagesResponse' );
@@ -139,6 +153,60 @@ class Message
     {
         $this->preload = true;
 
-        return $this;
-    }
+		$this->client->setUseBatch(false);
+
+		$messages = [];
+
+		foreach ($messagesBatch as $message) {
+			$messages[] = new Mail($message);
+		}
+
+		return $messages;
+	}
+
+	/**
+	 * Preload the information on each Mail objects.
+	 * If is not preload you will have to call the load method from the Mail class
+	 * @return $this
+	 * @see Mail::load()
+	 *
+	 */
+	public function preload()
+	{
+		$this->preload = true;
+
+		return $this;
+	}
+
+	public function getUser()
+	{
+		return $this->client->user();
+	}
+
+	/**
+	 * @param $id
+	 *
+	 * @return \Google_Service_Gmail_Message
+	 */
+	private function getRequest($id)
+	{
+		return $this->service->users_messages->get('me', $id);
+	}
+
+	/**
+	 * @return \Google_Service_Gmail_ListMessagesResponse|object
+	 * @throws \Google_Exception
+	 */
+	private function getMessagesResponse()
+	{
+		$responseOrRequest = $this->service->users_messages->listUsersMessages( 'me', $this->params );
+
+		if ( get_class( $responseOrRequest ) === "GuzzleHttp\Psr7\Request" ) {
+			$response = $this->service->getClient()->execute( $responseOrRequest, 'Google_Service_Gmail_ListMessagesResponse' );
+
+			return $response;
+		}
+
+		return $responseOrRequest;
+	}
 }
