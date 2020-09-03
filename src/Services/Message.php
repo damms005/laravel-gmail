@@ -53,6 +53,21 @@ class Message
     }
 
 	/**
+	 * Returns next page if available of messages or an empty collection
+	 *
+	 * @return \Illuminate\Support\Collection
+	 * @throws \Google_Exception
+	 */
+	public function next()
+	{
+		if ($this->pageToken) {
+			return $this->all($this->pageToken);
+		} else {
+			return new MessageCollection([], $this);
+		}
+	}
+
+	/**
 	 * Returns a collection of Mail instances
 	 *
 	 * @param null|string $pageToken
@@ -75,6 +90,20 @@ class Message
         }
 
         return new MessageCollection($messages, $this);
+    }
+
+		$all = new MessageCollection($messages, $this);
+
+		return $all;
+	}
+
+        if ( get_class( $responseOrRequest ) === "GuzzleHttp\Psr7\Request" ) {
+            $response = $this->service->getClient()->execute( $responseOrRequest, 'Google_Service_Gmail_ListMessagesResponse' );
+
+            return $response;
+        }
+
+        return $responseOrRequest;
     }
 
     /**
@@ -133,6 +162,20 @@ class Message
 		}
 
 		return $messages;
+	}
+
+	/**
+	 * Preload the information on each Mail objects.
+	 * If is not preload you will have to call the load method from the Mail class
+	 * @return $this
+	 * @see Mail::load()
+	 *
+	 */
+	public function preload()
+	{
+		$this->preload = true;
+
+		return $this;
 	}
 
 	public function getUser()
