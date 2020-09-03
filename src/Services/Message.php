@@ -13,13 +13,15 @@ class Message
 {
 
     use SendsParameters,
-      Filterable;
+        Filterable;
 
     public $service;
 
     public $preload = false;
 
     public $pageToken;
+
+    public $client;
 
     /**
      * Optional parameter for getting single and multiple emails
@@ -35,6 +37,7 @@ class Message
      */
     public function __construct(LaravelGmailClass $client)
     {
+        $this->client = $client;
         $this->service = new Google_Service_Gmail($client);
     }
 
@@ -42,6 +45,7 @@ class Message
      * Returns next page if available of messages or an empty collection
      *
      * @return \Illuminate\Support\Collection
+     * @throws \Google_Exception
      */
     public function next()
     {
@@ -55,9 +59,10 @@ class Message
     /**
      * Returns a collection of Mail instances
      *
-     * @param  null|string  $pageToken
+     * @param null|string $pageToken
      *
      * @return \Illuminate\Support\Collection
+     * @throws \Google_Exception
      */
     public function all($pageToken = null)
     {
@@ -71,25 +76,17 @@ class Message
 
         $allMessages = $response->getMessages();
 
-        foreach ($allMessages as $message) {
-            $messages[] = new Mail($message, $this->preload);
+        if (!$this->preload) {
+            foreach ($allMessages as $message) {
+                $messages[] = new Mail($message, $this->preload);
+            }
+        } else {
+            $messages = $this->batchRequest($allMessages);
         }
 
-        return new MessageCollection($messages, $this);
-    }
+        $all = new MessageCollection($messages, $this);
 
-    private function getMessagesResponse()
-    {
-//		dd($this->params);
-        $responseOrRequest = $this->service->users_messages->listUsersMessages( 'me', $this->params );
-
-        if ( get_class( $responseOrRequest ) === "GuzzleHttp\Psr7\Request" ) {
-            $response = $this->service->getClient()->execute( $responseOrRequest, 'Google_Service_Gmail_ListMessagesResponse' );
-
-            return $response;
-        }
-
-        return $responseOrRequest;
+        return $all;
     }
 
     /**
@@ -103,7 +100,7 @@ class Message
     }
 
     /**
-     * Limit the messages coming from the query
+     * Limit the messages coming from the queryxw
      *
      * @param  int  $number
      *
@@ -123,9 +120,39 @@ class Message
      */
     public function get($id)
     {
-        $message = $this->service->users_messages->get('me', $id);
+        $message = $this->getRequest($id);
 
         return new Mail($message);
+    }
+
+    /**
+     * Creates a batch request to get all emails in a single call
+     *
+     * @param $allMessages
+     *
+     * @return array|null
+     */
+    public function batchRequest($allMessages)
+    {
+        $this->client->setUseBatch(true);
+
+        $batch = $this->service->createBatch();
+
+        foreach ($allMessages as $key => $message) {
+            $batch->add($this->getRequest($message->getId()), $key);
+        }
+
+        $messagesBatch = $batch->execute();
+
+        $this->client->setUseBatch(false);
+
+        $messages = [];
+
+        foreach ($messagesBatch as $message) {
+            $messages[] = new Mail($message);
+        }
+
+        return $messages;
     }
 
     /**
@@ -140,5 +167,37 @@ class Message
         $this->preload = true;
 
         return $this;
+    }
+
+    public function getUser()
+    {
+        return $this->client->user();
+    }
+
+    /**
+     * @param $id
+     *
+     * @return \Google_Service_Gmail_Message
+     */
+    private function getRequest($id)
+    {
+        return $this->service->users_messages->get('me', $id);
+    }
+
+    /**
+     * @return \Google_Service_Gmail_ListMessagesResponse|object
+     * @throws \Google_Exception
+     */
+    private function getMessagesResponse()
+    {
+        $responseOrRequest = $this->service->users_messages->listUsersMessages( 'me', $this->params );
+
+        if ( get_class( $responseOrRequest ) === "GuzzleHttp\Psr7\Request" ) {
+            $response = $this->service->getClient()->execute( $responseOrRequest, 'Google_Service_Gmail_ListMessagesResponse' );
+
+            return $response;
+        }
+
+        return $responseOrRequest;
     }
 }
