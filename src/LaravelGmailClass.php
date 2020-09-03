@@ -8,14 +8,15 @@ use Illuminate\Support\Facades\Redirect;
 
 class LaravelGmailClass extends GmailConnection
 {
-	public function __construct($config, $userId = null)
-	{
-		if (class_basename($config) === 'Application') {
-			$config = $config['config'];
-		}
 
-		parent::__construct($config, $userId);
-	}
+    public function __construct($config)
+    {
+        if (class_basename($config) === 'Application') {
+            $config = $config['config'];
+        }
+
+        parent::__construct($config);
+    }
 
     /**
      * @return Message
@@ -40,21 +41,10 @@ class LaravelGmailClass extends GmailConnection
         return $this->config('email');
     }
 
-	/**
-	 * Updates / sets the current userId for the service
-	 *
-	 * @return \Google_Service_Gmail_Profile
-	 */
-	public function setUserId($userId)
-	{
-		$this->userId = $userId;
-		return $this;
-	}
-
-	public function redirect()
-	{
-		return Redirect::to($this->getAuthUrl());
-	}
+    public function redirect()
+    {
+        return Redirect::to($this->getAuthUrl());
+    }
 
     /**
      * Gets the URL to authorize the user
