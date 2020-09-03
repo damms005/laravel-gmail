@@ -2,17 +2,10 @@
 
 namespace Amchara\LaravelGmail\Traits;
 
-use Google_Service_Gmail_MessagePart;
 use Illuminate\Support\Collection;
 
 trait HasParts
 {
-	/**
-	 * LOL
-	 * @var Collection
-	 */
-	private $allParts;
-
 	/**
 	 * Find all Parts of a message.
 	 * Necessary to reset the $allParts Varibale.
@@ -23,9 +16,7 @@ trait HasParts
 	 */
 	private function getAllParts($partsContainer)
 	{
-		$this->iterateParts($partsContainer);
-
-		return collect($this->allParts);
+		return $this->iterateParts($partsContainer);
 	}
 
 
@@ -41,30 +32,24 @@ trait HasParts
 
 	private function iterateParts($partsContainer, $returnOnFirstFound = false)
 	{
-		$parts = [];
-
-		$plucked = $partsContainer->flatten()->filter();
-
-		if ($plucked->count()) {
-			$parts = $plucked;
-		} else {
-			if ($partsContainer->count()) {
-				$parts = $partsContainer;
-			}
-		}
+		$allParts = [];
+		$parts = $partsContainer->pluck('parts');
 
 		if ($parts) {
-			/** @var Google_Service_Gmail_MessagePart $part */
 			foreach ($parts as $part) {
 				if ($part) {
 					if ($returnOnFirstFound) {
 						return true;
 					}
 
-					$this->allParts[$part->getPartId()] = $part;
-					$this->iterateParts(collect($part->getParts()));
+					$allParts[] = $part;
+					$part = collect($part);
+					$this->iterateParts($part);
 				}
 			}
+
 		}
+
+		return (collect($allParts))->flatten();
 	}
 }

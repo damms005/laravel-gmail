@@ -16,21 +16,17 @@ class GmailConnection extends Google_Client
         __construct as configConstruct;
     }
 
-	protected $emailAddress;
-	protected $refreshToken;
-	protected $app;
-	protected $accessToken;
-	protected $token;
-	private $configuration;
-	public $userId;
 
-	public function __construct($config = null, $userId = null)
-	{
-		$this->app = Container::getInstance();
+    protected $emailAddress;
+    protected $refreshToken;
+    protected $app;
+    protected $accessToken;
+    protected $token;
+    private $configuration;
 
-		$this->userId = $userId;
-
-		$this->configConstruct($config);
+    public function __construct($config = null)
+    {
+        $this->app = Container::getInstance();
 
         $this->configConstruct($config);
 
