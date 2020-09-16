@@ -195,12 +195,10 @@ class GmailConnection extends Google_Client
             $code = (string) $request->input('code', null);
             if (!is_null($code) && !empty($code)) {
                 $accessToken = $this->fetchAccessTokenWithAuthCode($code);
-                if ($this->haveReadScope()) {
-                    $me = $this->getProfile();
-                    if (property_exists($me, 'emailAddress')) {
-                        $this->emailAddress = $me->emailAddress;
-                        $accessToken['email'] = $me->emailAddress;
-                    }
+                $me = $this->getProfile();
+                if (property_exists($me, 'emailAddress')) {
+                    $this->emailAddress = $me->emailAddress;
+                    $accessToken['email'] = $me->emailAddress;
                 }
                 $this->setBothAccessToken($accessToken);
 
